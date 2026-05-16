@@ -1,0 +1,15 @@
+{
+  "name": "@natproject/types",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.2",
+    "rimraf": "^5.0.7"
+  }
+}

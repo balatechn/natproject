@@ -1,0 +1,33 @@
+name: Deploy to Coolify
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Trigger Coolify Deploy — Web
+        run: |
+          curl -s -o /dev/null -w "%{http_code}" \
+            -X GET \
+            "${{ secrets.COOLIFY_WEBHOOK_WEB }}" \
+            -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}"
+
+      - name: Trigger Coolify Deploy — API
+        run: |
+          curl -s -o /dev/null -w "%{http_code}" \
+            -X GET \
+            "${{ secrets.COOLIFY_WEBHOOK_API }}" \
+            -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}"
+
+      - name: Deployment triggered
+        run: echo "Coolify deployments triggered for web and api"
