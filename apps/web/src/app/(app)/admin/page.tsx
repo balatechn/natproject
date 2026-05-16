@@ -2,15 +2,17 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = { title: 'Admin' };
 
-export default function AdminPage() {
+export default function Page() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Admin</h1>
-        <p className="text-muted-foreground">User management, roles, audit logs — Phase 8</p>
+        <h1 className="text-2xl font-bold tracking-tight">Administration</h1>
+        <p className="text-muted-foreground text-sm">Users, roles, settings, audit log — coming in Phase 6</p>
       </div>
-      <div className="rounded-lg border bg-card p-8 text-center text-muted-foreground">
-        Module coming soon in the next phase.
+      <div className="flex flex-col items-center justify-center rounded-xl border bg-card p-16 text-center gap-3">
+        <div className="text-4xl opacity-20">🚧</div>
+        <p className="text-muted-foreground font-medium">Coming Soon</p>
+        <p className="text-sm text-muted-foreground max-w-sm">This module is planned for an upcoming phase. Stay tuned!</p>
       </div>
     </div>
   );

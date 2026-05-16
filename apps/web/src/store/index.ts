@@ -29,9 +29,11 @@ export const useUIStore = create<UIState>()(
 );
 
 interface AuthState {
-  user: { id: string; name: string; email: string; role: string } | null;
+  user: { id: string; name: string; email: string; organizationId: string; roles?: string[]; avatarUrl?: string | null } | null;
   accessToken: string | null;
   setAuth: (user: AuthState['user'], token: string) => void;
+  setUser: (user: AuthState['user']) => void;
+  setAccessToken: (token: string) => void;
   clearAuth: () => void;
 }
 
@@ -42,6 +44,8 @@ export const useAuthStore = create<AuthState>()(
         user: null,
         accessToken: null,
         setAuth: (user, accessToken) => set({ user, accessToken }),
+        setUser: (user) => set({ user }),
+        setAccessToken: (accessToken) => set({ accessToken }),
         clearAuth: () => set({ user: null, accessToken: null }),
       }),
       { name: 'nat-auth-store', partialize: (s) => ({ user: s.user }) },

@@ -1,8 +1,5 @@
-import type { Metadata } from 'next';
+export { default } from './_login-client';
 
-export const metadata: Metadata = { title: 'Sign In' };
-
-export default function LoginPage() {
   return (
     <div className="rounded-xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-sm">
       <div className="mb-8 flex flex-col items-center gap-2">
