@@ -13,7 +13,13 @@ import { LeadStatus } from '@prisma/client';
 export class CrmController {
   constructor(private crmService: CrmService) {}
 
-  // Leads
+  // ── Leads ──────────────────────────────────────────────────────────────────
+
+  @Get('leads/stats')
+  getStats(@CurrentUser('organizationId') orgId: string) {
+    return this.crmService.getStats(orgId);
+  }
+
   @Get('leads')
   findLeads(
     @CurrentUser('organizationId') orgId: string,
@@ -21,14 +27,10 @@ export class CrmController {
     @Query('status') status?: string,
     @Query('assigneeId') assigneeId?: string,
     @Query('page') page?: number,
+    @Query('limit') limit?: number,
     @Query('pageSize') pageSize?: number,
   ) {
-    return this.crmService.findLeads(orgId, { search, status, assigneeId, page, pageSize });
-  }
-
-  @Get('leads/stats')
-  getStats(@CurrentUser('organizationId') orgId: string) {
-    return this.crmService.getStats(orgId);
+    return this.crmService.findLeads(orgId, { search, status, assigneeId, page, limit, pageSize });
   }
 
   @Get('leads/:id')
@@ -41,7 +43,8 @@ export class CrmController {
     @CurrentUser('organizationId') orgId: string,
     @Body() dto: {
       name: string; email?: string; phone?: string; company?: string;
-      source?: string; status?: LeadStatus; notes?: string; assignedToId?: string; value?: number;
+      source?: string; status?: LeadStatus; priority?: string; notes?: string;
+      assignedToId?: string; value?: number; customerId?: string;
     },
   ) {
     return this.crmService.createLead(orgId, dto);
@@ -51,7 +54,10 @@ export class CrmController {
   updateLead(
     @Param('id') id: string,
     @CurrentUser('organizationId') orgId: string,
-    @Body() dto: Partial<{ name: string; email: string; status: LeadStatus; assignedToId: string; value: number }>,
+    @Body() dto: Partial<{
+      name: string; email: string; phone: string; company: string; source: string;
+      status: LeadStatus; priority: string; notes: string; assignedToId: string; value: number;
+    }>,
   ) {
     return this.crmService.updateLead(id, orgId, dto);
   }
@@ -62,15 +68,49 @@ export class CrmController {
     return this.crmService.deleteLead(id, orgId);
   }
 
-  // Customers
+  // ── Lead Activities ────────────────────────────────────────────────────────
+
+  @Get('leads/:id/activities')
+  getLeadActivities(@Param('id') id: string, @CurrentUser('organizationId') orgId: string) {
+    return this.crmService.findLeadActivities(id, orgId);
+  }
+
+  @Post('leads/:id/activities')
+  createLeadActivity(
+    @Param('id') id: string,
+    @CurrentUser('organizationId') orgId: string,
+    @Body() dto: { type: string; note?: string; subject?: string },
+  ) {
+    return this.crmService.createLeadActivity(id, orgId, dto);
+  }
+
+  // ── WhatsApp ───────────────────────────────────────────────────────────────
+
+  @Get('leads/:id/whatsapp/messages')
+  getWhatsAppMessages(@Param('id') id: string, @CurrentUser('organizationId') orgId: string) {
+    return this.crmService.getWhatsAppMessages(id, orgId);
+  }
+
+  @Post('leads/:id/whatsapp/send')
+  sendWhatsApp(
+    @Param('id') id: string,
+    @CurrentUser('organizationId') orgId: string,
+    @Body() dto: { message: string },
+  ) {
+    return this.crmService.sendWhatsApp(id, orgId, dto.message);
+  }
+
+  // ── Customers ──────────────────────────────────────────────────────────────
+
   @Get('customers')
   findCustomers(
     @CurrentUser('organizationId') orgId: string,
     @Query('search') search?: string,
     @Query('page') page?: number,
+    @Query('limit') limit?: number,
     @Query('pageSize') pageSize?: number,
   ) {
-    return this.crmService.findCustomers(orgId, { search, page, pageSize });
+    return this.crmService.findCustomers(orgId, { search, page, limit, pageSize });
   }
 
   @Post('customers')
@@ -90,40 +130,37 @@ export class CrmController {
     return this.crmService.updateCustomer(id, orgId, dto);
   }
 
-  // Opportunities
+  // ── Opportunities ──────────────────────────────────────────────────────────
+
   @Get('opportunities')
   findOpportunities(
     @CurrentUser('organizationId') orgId: string,
     @Query('customerId') customerId?: string,
     @Query('stageId') stageId?: string,
     @Query('page') page?: number,
-    @Query('pageSize') pageSize?: number,
   ) {
-    return this.crmService.findOpportunities(orgId, { customerId, stageId, page, pageSize });
+    return this.crmService.findOpportunities(orgId, { customerId, stageId, page });
   }
 
   @Post('opportunities')
-  createOpportunity(@Body() dto: { customerId: string; stageId: string; title: string; value?: number; expectedCloseDate?: string; assignedToId?: string }) {
+  createOpportunity(
+    @Body() dto: { customerId: string; stageId: string; title: string; value?: number; expectedCloseDate?: string },
+  ) {
     return this.crmService.createOpportunity(dto);
   }
 
   @Patch('opportunities/:id')
-  updateOpportunity(@Param('id') id: string, @Body() dto: Partial<{ stageId: string; title: string; value: number; status: string }>) {
+  updateOpportunity(
+    @Param('id') id: string,
+    @Body() dto: Partial<{ stageId: string; title: string; value: number; status: string }>,
+  ) {
     return this.crmService.updateOpportunity(id, dto);
   }
 
-  // Pipeline stages
-  @Get('pipeline-stages')
-  getPipelineStages(@CurrentUser('organizationId') orgId: string) {
-    return this.crmService.getPipelineStages(orgId);
-  }
+  // ── Pipeline Stages ────────────────────────────────────────────────────────
 
-  // Interactions
-  @Post('interactions')
-  createInteraction(
-    @CurrentUser('id') userId: string,
-    @Body() dto: { type: string; notes?: string; occurredAt: string; leadId?: string; customerId?: string },
-  ) {
-    return this.crmService.createInteraction({ ...dto, createdById: userId });
+  @Get('pipeline-stages')
+  getPipelineStages() {
+    return this.crmService.getPipelineStages();
   }
 }

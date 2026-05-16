@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { WorkflowTrigger } from '@prisma/client';
 
 @Injectable()
 export class WorkflowsService {
@@ -10,7 +11,7 @@ export class WorkflowsService {
     const [data, total] = await this.prisma.$transaction([
       this.prisma.workflow.findMany({
         where: { organizationId },
-        include: { steps: { orderBy: { order: 'asc' } } },
+        include: { steps: { orderBy: { position: 'asc' } } },
         skip: (page - 1) * pageSize,
         take: pageSize,
         orderBy: { createdAt: 'desc' },
@@ -24,13 +25,10 @@ export class WorkflowsService {
     const wf = await this.prisma.workflow.findFirst({
       where: { id, organizationId },
       include: {
-        steps: { orderBy: { order: 'asc' } },
+        steps: { orderBy: { position: 'asc' } },
         approvals: {
-          include: {
-            approver: { select: { id: true, name: true } },
-            task: { select: { id: true, title: true } },
-          },
-          orderBy: { requestedAt: 'desc' },
+          include: { approver: { select: { id: true, name: true } } },
+          orderBy: { createdAt: 'desc' },
         },
       },
     });
@@ -40,44 +38,59 @@ export class WorkflowsService {
 
   async create(
     organizationId: string,
-    createdById: string,
     dto: {
       name: string;
       description?: string;
-      trigger: string;
-      triggerConfig?: Record<string, unknown>;
-      steps?: Array<{
-        name: string;
-        type: string;
-        config?: Record<string, unknown>;
-        conditions?: Record<string, unknown>;
-        order: number;
-      }>;
+      trigger?: string;
+      nodes?: unknown[];
+      edges?: unknown[];
+      steps?: Array<{ name: string; type: string; config?: Record<string, unknown>; position: number }>;
     },
   ) {
-    const { steps, ...rest } = dto;
+    const { steps, nodes, edges, trigger, ...rest } = dto;
     return this.prisma.workflow.create({
       data: {
         ...rest,
         organizationId,
-        createdById,
-        trigger: rest.trigger as never,
+        trigger: (trigger ?? 'MANUAL') as WorkflowTrigger,
+        nodes: nodes ?? [],
+        edges: edges ?? [],
         ...(steps?.length && {
-          steps: { create: steps },
+          steps: {
+            create: steps.map((s, i) => ({
+              name: s.name,
+              type: s.type,
+              config: s.config ?? {},
+              position: s.position ?? i,
+            })),
+          },
         }),
       },
-      include: { steps: { orderBy: { order: 'asc' } } },
+      include: { steps: { orderBy: { position: 'asc' } } },
     });
   }
 
-  async update(id: string, organizationId: string, dto: Partial<{
-    name: string;
-    description: string;
-    active: boolean;
-    triggerConfig: Record<string, unknown>;
-  }>) {
+  async update(
+    id: string,
+    organizationId: string,
+    dto: Partial<{
+      name: string;
+      description: string;
+      isActive: boolean;
+      nodes: unknown[];
+      edges: unknown[];
+      trigger: string;
+    }>,
+  ) {
     await this.assertExists(id, organizationId);
-    return this.prisma.workflow.update({ where: { id }, data: dto });
+    const { trigger, ...rest } = dto;
+    return this.prisma.workflow.update({
+      where: { id },
+      data: {
+        ...rest,
+        ...(trigger && { trigger: trigger as WorkflowTrigger }),
+      },
+    });
   }
 
   async delete(id: string, organizationId: string) {
@@ -88,19 +101,14 @@ export class WorkflowsService {
 
   async toggle(id: string, organizationId: string) {
     const wf = await this.assertExists(id, organizationId);
-    return this.prisma.workflow.update({ where: { id }, data: { active: !wf.active } });
+    return this.prisma.workflow.update({ where: { id }, data: { isActive: !wf.isActive } });
   }
 
-  // ---- Approvals ----
   async getPendingApprovals(userId: string) {
     return this.prisma.approval.findMany({
       where: { approverId: userId, status: 'PENDING' },
-      include: {
-        workflow: { select: { id: true, name: true } },
-        task: { select: { id: true, title: true } },
-        requestedBy: { select: { id: true, name: true } },
-      },
-      orderBy: { requestedAt: 'desc' },
+      include: { workflow: { select: { id: true, name: true } }, approver: { select: { id: true, name: true } } },
+      orderBy: { createdAt: 'desc' },
     });
   }
 
@@ -109,7 +117,7 @@ export class WorkflowsService {
     if (!approval) throw new NotFoundException('Approval not found');
     return this.prisma.approval.update({
       where: { id },
-      data: { status, approvedAt: new Date(), notes },
+      data: { status, decidedAt: new Date(), notes },
     });
   }
 

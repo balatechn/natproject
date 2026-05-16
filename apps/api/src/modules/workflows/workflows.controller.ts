@@ -34,28 +34,28 @@ export class WorkflowsController {
   @Post()
   create(
     @CurrentUser('organizationId') orgId: string,
-    @CurrentUser('id') userId: string,
     @Body() dto: {
       name: string;
       description?: string;
-      trigger: string;
-      triggerConfig?: Record<string, unknown>;
-      steps?: Array<{ name: string; type: string; config?: Record<string, unknown>; conditions?: Record<string, unknown>; order: number }>;
+      trigger?: string;
+      nodes?: unknown[];
+      edges?: unknown[];
+      steps?: Array<{ name: string; type: string; config?: Record<string, unknown>; position: number }>;
     },
   ) {
-    return this.workflowsService.create(orgId, userId, dto);
+    return this.workflowsService.create(orgId, dto);
   }
 
   @Patch(':id')
   update(
     @Param('id') id: string,
     @CurrentUser('organizationId') orgId: string,
-    @Body() dto: Partial<{ name: string; description: string; active: boolean; triggerConfig: Record<string, unknown> }>,
+    @Body() dto: Partial<{ name: string; description: string; isActive: boolean; trigger: string; nodes: unknown[]; edges: unknown[] }>,
   ) {
     return this.workflowsService.update(id, orgId, dto);
   }
 
-  @Patch(':id/toggle')
+  @Post(':id/toggle')
   @ApiOperation({ summary: 'Toggle workflow active/inactive' })
   toggle(@Param('id') id: string, @CurrentUser('organizationId') orgId: string) {
     return this.workflowsService.toggle(id, orgId);
@@ -67,7 +67,7 @@ export class WorkflowsController {
     return this.workflowsService.delete(id, orgId);
   }
 
-  @Patch('approvals/:id')
+  @Post('approvals/:id/respond')
   @ApiOperation({ summary: 'Approve or reject a workflow approval' })
   respondApproval(
     @Param('id') id: string,
