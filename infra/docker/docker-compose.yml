@@ -62,7 +62,7 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
     command: server /data --console-address ":9001"
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 30s
       timeout: 20s
       retries: 3
@@ -100,8 +100,8 @@ services:
   # ---- NestJS API ----
   api:
     build:
-      context: ../apps/api
-      dockerfile: ../../infra/docker/Dockerfile.api
+      context: ../..          # monorepo root
+      dockerfile: infra/docker/Dockerfile.api
     restart: unless-stopped
     networks: [natnet]
     environment:
@@ -116,24 +116,36 @@ services:
       S3_BUCKET: ${S3_BUCKET:-natproject}
       S3_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
       S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      WHATSAPP_EVOLUTION_URL: ${WHATSAPP_EVOLUTION_URL:-}
+      WHATSAPP_EVOLUTION_KEY: ${WHATSAPP_EVOLUTION_KEY:-}
+      WHATSAPP_INSTANCE: ${WHATSAPP_INSTANCE:-natproject}
+      N8N_WEBHOOK_URL: ${N8N_WEBHOOK_URL:-http://n8n:5678/webhook}
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3001/api/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/api/v1/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
+      start_period: 60s
+      retries: 5
     ports:
       - "${API_PORT:-3001}:3001"
 
   # ---- Next.js Web ----
   web:
     build:
-      context: ../apps/web
-      dockerfile: ../../infra/docker/Dockerfile.web
+      context: ../..          # monorepo root
+      dockerfile: infra/docker/Dockerfile.web
+      args:
+        NEXT_PUBLIC_API_URL: ${API_URL:-http://localhost:3001}
+        NEXT_PUBLIC_WS_URL: ${WS_URL:-ws://localhost:3001}
     restart: unless-stopped
     networks: [natnet]
     environment:

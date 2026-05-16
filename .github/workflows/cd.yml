@@ -15,19 +15,41 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - name: Trigger Coolify Deploy — Web
-        run: |
-          curl -s -o /dev/null -w "%{http_code}" \
-            -X GET \
-            "${{ secrets.COOLIFY_WEBHOOK_WEB }}" \
-            -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}"
-
       - name: Trigger Coolify Deploy — API
+        id: deploy_api
         run: |
-          curl -s -o /dev/null -w "%{http_code}" \
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
             -X GET \
-            "${{ secrets.COOLIFY_WEBHOOK_API }}" \
-            -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}"
+            -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}" \
+            "${{ secrets.COOLIFY_WEBHOOK_API }}")
+          echo "status=$STATUS" >> "$GITHUB_OUTPUT"
+          if [ "$STATUS" != "200" ] && [ "$STATUS" != "201" ] && [ "$STATUS" != "204" ]; then
+            echo "::error::API deployment webhook returned HTTP $STATUS"
+            exit 1
+          fi
+          echo "✓ API deployment triggered (HTTP $STATUS)"
 
-      - name: Deployment triggered
-        run: echo "Coolify deployments triggered for web and api"
+      - name: Trigger Coolify Deploy — Web
+        id: deploy_web
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X GET \
+            -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}" \
+            "${{ secrets.COOLIFY_WEBHOOK_WEB }}")
+          echo "status=$STATUS" >> "$GITHUB_OUTPUT"
+          if [ "$STATUS" != "200" ] && [ "$STATUS" != "201" ] && [ "$STATUS" != "204" ]; then
+            echo "::error::Web deployment webhook returned HTTP $STATUS"
+            exit 1
+          fi
+          echo "✓ Web deployment triggered (HTTP $STATUS)"
+
+      - name: Summary
+        run: |
+          echo "## Deployment Triggered" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Service | Webhook status |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---------|----------------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| API | HTTP ${{ steps.deploy_api.outputs.status }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Web | HTTP ${{ steps.deploy_web.outputs.status }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Monitor progress at: http://187.127.134.246:8000/" >> "$GITHUB_STEP_SUMMARY"

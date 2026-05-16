@@ -26,7 +26,6 @@ RUN cd apps/api && npx prisma generate
 
 # ---- runner ----
 FROM node:20-alpine AS runner
-RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -39,8 +38,12 @@ COPY --from=builder --chown=nestjs:nodejs /app/apps/api/node_modules ./node_modu
 COPY --from=builder --chown=nestjs:nodejs /app/apps/api/prisma ./prisma
 COPY --from=builder --chown=nestjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 
+# Entrypoint: runs prisma migrate deploy then starts the server
+COPY --from=builder /app/infra/docker/entrypoint.sh ./entrypoint.sh
+RUN chmod +x ./entrypoint.sh
+
 USER nestjs
 
 EXPOSE 3001
 
-CMD ["node", "dist/main"]
+ENTRYPOINT ["/bin/sh", "/app/entrypoint.sh"]
