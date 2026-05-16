@@ -135,3 +135,46 @@ jobs:
           NEXT_PUBLIC_WS_URL: ws://localhost:3001
           NEXTAUTH_URL: http://localhost:3000
           NEXTAUTH_SECRET: build-time-secret-not-used-in-prod
+
+  # ---- E2E Tests (Playwright) ----
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: lint
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm --filter @natproject/web exec playwright install --with-deps chromium
+
+      - name: Generate Prisma client (required for web build)
+        run: pnpm --filter @natproject/api db:generate
+
+      - name: Run E2E tests
+        run: pnpm --filter @natproject/web test:e2e
+        env:
+          CI: true
+          NEXT_PUBLIC_API_URL: http://localhost:3001
+          NEXT_PUBLIC_WS_URL: ws://localhost:3001
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report
+          retention-days: 14
+
