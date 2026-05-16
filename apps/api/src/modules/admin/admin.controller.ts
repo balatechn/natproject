@@ -1,5 +1,6 @@
 import {
-  Controller, Get, Post, Patch, Delete, Param, Body, Query, HttpCode, HttpStatus,
+  Controller, Get, Post, Patch, Delete,
+  Param, Body, Query, HttpCode, HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
@@ -13,6 +14,14 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 export class AdminController {
   constructor(private adminService: AdminService) {}
 
+  @Get('stats')
+  @ApiOperation({ summary: 'System-wide entity counts' })
+  getSystemStats(@CurrentUser('organizationId') orgId: string) {
+    return this.adminService.getSystemStats(orgId);
+  }
+
+  // ── Users ──────────────────────────────────────────────────────────────────
+
   @Get('users')
   listUsers(
     @CurrentUser('organizationId') orgId: string,
@@ -23,18 +32,40 @@ export class AdminController {
     return this.adminService.listUsers(orgId, { search, page, pageSize });
   }
 
-  // Roles
+  @Patch('users/:id')
+  updateUser(
+    @Param('id') id: string,
+    @CurrentUser('organizationId') orgId: string,
+    @Body() dto: Partial<{ status: string; jobTitle: string; departmentId: string }>,
+  ) {
+    return this.adminService.updateUser(id, orgId, dto);
+  }
+
+  @Post('users/:id/roles/:roleId')
+  assignUserRole(
+    @Param('id') userId: string,
+    @Param('roleId') roleId: string,
+    @CurrentUser('organizationId') orgId: string,
+  ) {
+    return this.adminService.assignUserRole(userId, orgId, roleId);
+  }
+
+  @Delete('users/:id/roles/:roleId')
+  @HttpCode(HttpStatus.OK)
+  removeUserRole(@Param('id') userId: string, @Param('roleId') roleId: string) {
+    return this.adminService.removeUserRole(userId, roleId);
+  }
+
+  // ── Roles & Permissions ────────────────────────────────────────────────────
+
   @Get('roles')
-  listRoles(@CurrentUser('organizationId') orgId: string) {
-    return this.adminService.listRoles(orgId);
+  listRoles() {
+    return this.adminService.listRoles();
   }
 
   @Post('roles')
-  createRole(
-    @CurrentUser('organizationId') orgId: string,
-    @Body() dto: { name: string; description?: string },
-  ) {
-    return this.adminService.createRole(orgId, dto);
+  createRole(@Body() dto: { name: string; description?: string }) {
+    return this.adminService.createRole(dto);
   }
 
   @Get('permissions')
@@ -53,7 +84,8 @@ export class AdminController {
     return this.adminService.removePermission(roleId, permId);
   }
 
-  // API Keys
+  // ── API Keys ───────────────────────────────────────────────────────────────
+
   @Get('api-keys')
   listApiKeys(@CurrentUser('organizationId') orgId: string) {
     return this.adminService.listApiKeys(orgId);
@@ -74,29 +106,41 @@ export class AdminController {
     return this.adminService.revokeApiKey(id, orgId);
   }
 
-  // Audit log
+  // ── Audit Log ──────────────────────────────────────────────────────────────
+
   @Get('audit-log')
   getAuditLog(
     @CurrentUser('organizationId') orgId: string,
     @Query('userId') userId?: string,
+    @Query('resource') resource?: string,
     @Query('page') page?: number,
     @Query('pageSize') pageSize?: number,
   ) {
-    return this.adminService.getAuditLog(orgId, { userId, page, pageSize });
+    return this.adminService.getAuditLog(orgId, { userId, resource, page, pageSize });
   }
 
-  // Settings
+  // ── Settings ───────────────────────────────────────────────────────────────
+
   @Get('settings')
   getSettings(@CurrentUser('organizationId') orgId: string) {
     return this.adminService.getSettings(orgId);
   }
 
   @Patch('settings')
-  @ApiOperation({ summary: 'Upsert setting key/value' })
+  @ApiOperation({ summary: 'Upsert a setting key/value pair' })
   upsertSetting(
     @CurrentUser('organizationId') orgId: string,
-    @Body() body: { key: string; value: string },
+    @Body() body: { key: string; value: unknown },
   ) {
     return this.adminService.upsertSetting(orgId, body.key, body.value);
+  }
+
+  @Patch('organization')
+  @ApiOperation({ summary: 'Update organization profile' })
+  updateOrganization(
+    @CurrentUser('organizationId') orgId: string,
+    @Body() dto: Partial<{ name: string; logoUrl: string; website: string; industry: string }>,
+  ) {
+    return this.adminService.updateOrganization(orgId, dto);
   }
 }

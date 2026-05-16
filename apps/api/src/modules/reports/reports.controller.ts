@@ -32,4 +32,16 @@ export class ReportsController {
   getTaskSla(@CurrentUser('organizationId') orgId: string) {
     return this.reportsService.getTaskSlaReport(orgId);
   }
+
+  @Get('task-summary')
+  @ApiOperation({ summary: 'Task counts by status and priority' })
+  getTaskSummary(@CurrentUser('organizationId') orgId: string) {
+    return this.reportsService.getTaskSummaryReport(orgId);
+  }
+
+  @Get('team-workload')
+  @ApiOperation({ summary: 'Task counts per team member' })
+  getTeamWorkload(@CurrentUser('organizationId') orgId: string) {
+    return this.reportsService.getTeamWorkloadReport(orgId);
+  }
 }

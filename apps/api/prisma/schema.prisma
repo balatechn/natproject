@@ -741,16 +741,17 @@ model ActivityLog {
 }
 
 model AuditLog {
-  id         String   @id @default(cuid())
-  userId     String?
-  action     String
-  resource   String
-  resourceId String
-  before     Json?
-  after      Json?
-  ipAddress  String?
-  userAgent  String?
-  createdAt  DateTime @default(now())
+  id             String   @id @default(cuid())
+  organizationId String?
+  userId         String?
+  action         String
+  resource       String
+  resourceId     String
+  before         Json?
+  after          Json?
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime @default(now())
 
   @@map("audit_logs")
 }
@@ -770,15 +771,17 @@ model Setting {
 }
 
 model ApiKey {
-  id          String    @id @default(cuid())
-  name        String
-  keyHash     String    @unique
-  prefix      String
-  scopes      String[]
-  expiresAt   DateTime?
-  lastUsedAt  DateTime?
-  createdBy   String
-  createdAt   DateTime  @default(now())
+  id             String    @id @default(cuid())
+  organizationId String
+  name           String
+  keyHash        String    @unique
+  prefix         String
+  scopes         String[]
+  expiresAt      DateTime?
+  lastUsedAt     DateTime?
+  revokedAt      DateTime?
+  createdBy      String
+  createdAt      DateTime  @default(now())
 
   @@map("api_keys")
 }
