@@ -17,6 +17,7 @@ export function useTasks(params?: {
   assigneeId?: string;
   search?: string;
   page?: number;
+  limit?: number;
 }) {
   return useQuery({
     queryKey: taskKeys.list(params ?? {}),
@@ -83,6 +84,22 @@ export function useUpdateTask(id: string) {
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: taskKeys.lists() });
       qc.invalidateQueries({ queryKey: taskKeys.detail(id) });
+      if (data?.projectId) qc.invalidateQueries({ queryKey: taskKeys.board(data.projectId) });
+    },
+  });
+}
+
+/** Mutation that accepts { id, data } so the task ID can be determined at call time */
+export function useUpdateTaskDynamic() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Record<string, unknown> }) => {
+      const res = await apiClient.patch(`/tasks/${id}`, data);
+      return res.data.data;
+    },
+    onSuccess: (data, vars) => {
+      qc.invalidateQueries({ queryKey: taskKeys.lists() });
+      qc.invalidateQueries({ queryKey: taskKeys.detail(vars.id) });
       if (data?.projectId) qc.invalidateQueries({ queryKey: taskKeys.board(data.projectId) });
     },
   });

@@ -14,6 +14,7 @@ export function useProjects(params?: {
   status?: string;
   page?: number;
   pageSize?: number;
+  limit?: number;
 }) {
   return useQuery({
     queryKey: projectKeys.list(params ?? {}),
