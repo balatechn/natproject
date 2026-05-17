@@ -176,6 +176,7 @@ model User {
   approvals        Approval[]
   assignedLeads    Lead[]           @relation("LeadAssignee")
   resources        Resource[]
+  timeEntries      TimeEntry[]
 
   @@map("users")
 }
@@ -310,6 +311,7 @@ model Project {
   baselines      Baseline[]
   activityLogs   ActivityLog[]
   attachments    Attachment[]
+  timeEntries    TimeEntry[]
 
   @@unique([organizationId, code])
   @@map("projects")
@@ -381,6 +383,7 @@ model Task {
   comments      Comment[]
   activityLogs  ActivityLog[]
   recurringRule RecurringRule?
+  timeEntries   TimeEntry[]
 
   @@index([projectId])
   @@index([status])
@@ -779,6 +782,32 @@ model Setting {
 
   @@unique([organizationId, key])
   @@map("settings")
+}
+
+// ============================================================
+// TIME TRACKING
+// ============================================================
+
+model TimeEntry {
+  id          String    @id @default(cuid())
+  userId      String
+  projectId   String
+  taskId      String?
+  description String?
+  hours       Float
+  date        DateTime  @db.Date
+  billable    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  task        Task?     @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@index([userId, date])
+  @@index([projectId, date])
+  @@index([taskId])
+  @@map("time_entries")
 }
 
 model ApiKey {

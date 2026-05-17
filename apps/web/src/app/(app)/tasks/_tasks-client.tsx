@@ -80,6 +80,7 @@ export default function TasksPage() {
   const [open, setOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [selectedTaskTitle, setSelectedTaskTitle] = useState<string | undefined>();
+  const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>();
 
   const { data: projects } = useProjects({ limit: 50 });
   const { data: tasksData, isLoading } = useTasks({
@@ -212,6 +213,7 @@ export default function TasksPage() {
                     onClick={() => {
                       setSelectedTaskId(task.id);
                       setSelectedTaskTitle(task.title);
+                      setSelectedProjectId(task.projectId);
                     }}
                   />
                 ))}
@@ -224,6 +226,7 @@ export default function TasksPage() {
       <TaskDrawer
         taskId={selectedTaskId}
         taskTitle={selectedTaskTitle}
+        projectId={selectedProjectId}
         open={!!selectedTaskId}
         onOpenChange={(v) => { if (!v) setSelectedTaskId(null); }}
       />

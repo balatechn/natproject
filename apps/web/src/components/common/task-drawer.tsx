@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import {
   Paperclip,
   Send,
@@ -14,6 +14,8 @@ import {
   X,
   FileText,
   Image,
+  Clock,
+  Plus,
 } from 'lucide-react';
 import {
   Sheet,
@@ -25,12 +27,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { apiClient } from '@/lib/api-client';
 import { useAuthStore } from '@/store/index';
 import { cn } from '@/lib/utils';
+
+import {
+  useTimeEntriesByTask,
+  useCreateTimeEntry,
+  useDeleteTimeEntry,
+  type TimeEntry,
+} from '@/hooks/use-time-entries';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -62,6 +73,7 @@ interface ActivityEntry {
 interface TaskDrawerProps {
   taskId: string | null;
   taskTitle?: string;
+  projectId?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -394,9 +406,157 @@ function ActivityTab({ taskId }: { taskId: string }) {
   );
 }
 
+// ── TimeTab ───────────────────────────────────────────────────────────────────
+
+function TimeTab({
+  taskId,
+  projectId,
+}: {
+  taskId: string;
+  projectId?: string;
+}) {
+  const user = useAuthStore((s) => s.user);
+  const { data: entries = [], isLoading } = useTimeEntriesByTask(taskId);
+  const createEntry = useCreateTimeEntry();
+  const deleteEntry = useDeleteTimeEntry();
+
+  const [hours, setHours] = useState('1');
+  const [date, setDate] = useState(() => format(new Date(), 'yyyy-MM-dd'));
+  const [description, setDescription] = useState('');
+  const [billable, setBillable] = useState(true);
+
+  const totalHours = entries.reduce((s: number, e: TimeEntry) => s + e.hours, 0);
+
+  const handleLog = async () => {
+    const h = parseFloat(hours);
+    if (!projectId || isNaN(h) || h <= 0) return;
+    await createEntry.mutateAsync({
+      projectId,
+      taskId,
+      hours: h,
+      date,
+      description: description.trim() || undefined,
+      billable,
+    });
+    setHours('1');
+    setDescription('');
+  };
+
+  return (
+    <div className="flex h-full flex-col gap-3">
+      {/* Quick log form */}
+      <div className="rounded-lg border bg-muted/30 p-3 space-y-2.5">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Log Time</p>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="grid gap-1">
+            <Label htmlFor="tab-te-hours" className="text-xs">Hours</Label>
+            <Input
+              id="tab-te-hours"
+              type="number"
+              min={0.01}
+              max={24}
+              step={0.25}
+              value={hours}
+              onChange={(e) => setHours(e.target.value)}
+              className="h-8 text-sm"
+            />
+          </div>
+          <div className="grid gap-1">
+            <Label htmlFor="tab-te-date" className="text-xs">Date</Label>
+            <Input
+              id="tab-te-date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="h-8 text-sm"
+            />
+          </div>
+        </div>
+        <div className="grid gap-1">
+          <Label htmlFor="tab-te-desc" className="text-xs">Description (optional)</Label>
+          <Input
+            id="tab-te-desc"
+            placeholder="What did you work on?"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="h-8 text-sm"
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Switch id="tab-te-billable" checked={billable} onCheckedChange={setBillable} />
+            <Label htmlFor="tab-te-billable" className="text-xs">Billable</Label>
+          </div>
+          <Button
+            size="sm"
+            className="gap-1.5"
+            onClick={handleLog}
+            disabled={!projectId || createEntry.isPending}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            {createEntry.isPending ? 'Saving…' : 'Log'}
+          </Button>
+        </div>
+      </div>
+
+      {/* Total */}
+      {totalHours > 0 && (
+        <div className="flex items-center gap-1.5 text-sm font-medium px-1">
+          <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-muted-foreground">Total logged:</span>
+          <span>{totalHours}h</span>
+        </div>
+      )}
+
+      {/* Entries list */}
+      <ScrollArea className="flex-1 pr-1">
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground">Loading…</p>
+        ) : entries.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No time logged on this task yet.</p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {entries.map((e: TimeEntry) => (
+              <div
+                key={e.id}
+                className="flex items-center gap-2 rounded-md border px-3 py-2 group text-sm"
+              >
+                <Clock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium">
+                    {e.hours}h
+                    {!e.billable && (
+                      <span className="ml-1.5 text-xs text-muted-foreground">(non-billable)</span>
+                    )}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {format(new Date(e.date), 'MMM d, yyyy')}
+                    {e.description && ` · ${e.description}`}
+                    {' · '}{e.user.name}
+                  </p>
+                </div>
+                {e.user.id === user?.id && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => deleteEntry.mutate(e.id)}
+                  >
+                    <X className="h-3.5 w-3.5 text-destructive" />
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </ScrollArea>
+    </div>
+  );
+}
+
 // ── Main Drawer ───────────────────────────────────────────────────────────────
 
-export function TaskDrawer({ taskId, taskTitle, open, onOpenChange }: TaskDrawerProps) {
+export function TaskDrawer({ taskId, taskTitle, projectId, open, onOpenChange }: TaskDrawerProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="flex flex-col w-full sm:max-w-lg p-0">
@@ -408,16 +568,20 @@ export function TaskDrawer({ taskId, taskTitle, open, onOpenChange }: TaskDrawer
 
         {taskId ? (
           <Tabs defaultValue="comments" className="flex flex-col flex-1 overflow-hidden px-4 pb-4">
-            <TabsList className="grid w-full grid-cols-3 mt-3 shrink-0">
-              <TabsTrigger value="comments" className="gap-1.5">
+            <TabsList className="grid w-full grid-cols-4 mt-3 shrink-0">
+              <TabsTrigger value="comments" className="gap-1 text-xs">
                 <MessageSquare className="h-3.5 w-3.5" />
                 Comments
               </TabsTrigger>
-              <TabsTrigger value="attachments" className="gap-1.5">
+              <TabsTrigger value="attachments" className="gap-1 text-xs">
                 <Paperclip className="h-3.5 w-3.5" />
                 Files
               </TabsTrigger>
-              <TabsTrigger value="activity" className="gap-1.5">
+              <TabsTrigger value="time" className="gap-1 text-xs">
+                <Clock className="h-3.5 w-3.5" />
+                Time
+              </TabsTrigger>
+              <TabsTrigger value="activity" className="gap-1 text-xs">
                 <Activity className="h-3.5 w-3.5" />
                 Activity
               </TabsTrigger>
@@ -428,6 +592,9 @@ export function TaskDrawer({ taskId, taskTitle, open, onOpenChange }: TaskDrawer
             </TabsContent>
             <TabsContent value="attachments" className="flex-1 mt-3 overflow-hidden">
               <AttachmentsTab taskId={taskId} />
+            </TabsContent>
+            <TabsContent value="time" className="flex-1 mt-3 overflow-hidden">
+              <TimeTab taskId={taskId} projectId={projectId} />
             </TabsContent>
             <TabsContent value="activity" className="flex-1 mt-3 overflow-hidden">
               <ActivityTab taskId={taskId} />

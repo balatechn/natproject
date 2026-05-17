@@ -24,6 +24,7 @@ import { HealthModule } from './modules/health/health.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { EventsModule } from './modules/events/events.module';
 import { AttachmentsModule } from './modules/attachments/attachments.module';
+import { TimeEntriesModule } from './modules/time-entries/time-entries.module';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { AttachmentsModule } from './modules/attachments/attachments.module';
     ReportsModule,
     EventsModule,
     AttachmentsModule,
+    TimeEntriesModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

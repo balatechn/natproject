@@ -8,7 +8,7 @@ import {
   LayoutDashboard, FolderKanban, CheckSquare, GanttChart,
   Users, Calendar, Zap, MessageSquare, BarChart3,
   Bell, Settings, ChevronLeft, ChevronRight, Leaf,
-  Building2,
+  Building2, Clock,
 } from 'lucide-react';
 import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
@@ -23,6 +23,7 @@ const navItems = [
   { label: 'Team Planner',  href: '/team-planner',    icon: Calendar },
   { label: 'Workflows',     href: '/workflows',       icon: Zap },
   { label: 'CRM',           href: '/crm',             icon: Building2 },
+  { label: 'Timesheets',    href: '/timesheets',      icon: Clock },
   { label: 'Reports',       href: '/reports',         icon: BarChart3 },
   { label: 'Notifications', href: '/notifications',   icon: Bell },
   { label: 'Admin',         href: '/admin',           icon: Settings },
