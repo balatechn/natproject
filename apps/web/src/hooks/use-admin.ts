@@ -19,7 +19,7 @@ export function useAdminStats() {
     queryKey: adminKeys.stats(),
     queryFn: async () => {
       const { data } = await axios.get('/admin/stats');
-      return data as { users: number; projects: number; tasks: number; leads: number; customers: number; workflows: number };
+      return data as { users: number; projects: number; tasks: number; workflows: number };
     },
   });
 }

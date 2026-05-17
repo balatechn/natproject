@@ -1,6 +1,6 @@
 'use client';
 
-import { FolderKanban, CheckSquare, AlertTriangle, TrendingUp, Users, BarChart3 } from 'lucide-react';
+import { FolderKanban, CheckSquare, AlertTriangle, TrendingUp, BarChart3 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -30,6 +30,8 @@ export default function DashboardPage() {
 
   const projectByStatus = stats?.projects?.byStatus ?? [];
   const taskByStatus = stats?.tasks?.byStatus ?? [];
+
+  const activeProjectsCount = projectByStatus.find((p: any) => p.status === 'IN_PROGRESS')?._count ?? 0;
 
   const taskChartData = taskByStatus.map((t: any) => ({
     name: t.status.replace('_', ' '),
@@ -88,9 +90,9 @@ export default function DashboardPage() {
               color={stats?.tasks?.slaBreach > 0 ? 'red' : 'default'}
             />
             <StatCard
-              title="Total Leads"
-              value={stats?.crm?.totalLeads ?? 0}
-              subtitle={`${stats?.crm?.totalCustomers ?? 0} customers`}
+              title="Active Projects"
+              value={activeProjectsCount}
+              subtitle="Currently in progress"
               icon={TrendingUp}
               color="amber"
             />

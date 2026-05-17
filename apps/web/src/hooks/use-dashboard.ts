@@ -5,15 +5,13 @@ export function useDashboardStats() {
   return useQuery({
     queryKey: ['dashboard', 'stats'],
     queryFn: async () => {
-      const [projects, tasks, crm] = await Promise.all([
+      const [projects, tasks] = await Promise.all([
         apiClient.get('/projects/stats'),
         apiClient.get('/tasks/stats'),
-        apiClient.get('/crm/leads/stats'),
       ]);
       return {
         projects: projects.data.data,
         tasks: tasks.data.data,
-        crm: crm.data.data,
       };
     },
     staleTime: 60_000,

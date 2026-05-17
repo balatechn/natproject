@@ -17,8 +17,8 @@ export const metadata: Metadata = {
     template: '%s | NAT Project',
   },
   description:
-    'Enterprise-grade project management, CRM, task management, and workflow automation platform.',
-  keywords: ['project management', 'crm', 'workflow', 'enterprise', 'gantt', 'team planner'],
+    'Enterprise-grade project management, task tracking, Gantt charts, and workflow automation platform.',
+  keywords: ['project management', 'gantt', 'task management', 'workflow', 'enterprise', 'team planner'],
   authors: [{ name: 'NAT Project Team' }],
   robots: { index: false, follow: false },
 };

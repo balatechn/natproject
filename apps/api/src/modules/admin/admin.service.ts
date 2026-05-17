@@ -8,15 +8,13 @@ export class AdminService {
   // ── System Stats ─────────────────────────────────────────────────────────────
 
   async getSystemStats(organizationId: string) {
-    const [users, projects, tasks, leads, customers, workflows] = await this.prisma.$transaction([
+    const [users, projects, tasks, workflows] = await this.prisma.$transaction([
       this.prisma.user.count({ where: { organizationId } }),
       this.prisma.project.count({ where: { organizationId, isTemplate: false } }),
       this.prisma.task.count({ where: { project: { organizationId } } }),
-      this.prisma.lead.count({ where: { organizationId } }),
-      this.prisma.customer.count({ where: { organizationId } }),
       this.prisma.workflow.count({ where: { organizationId } }),
     ]);
-    return { users, projects, tasks, leads, customers, workflows };
+    return { users, projects, tasks, workflows };
   }
 
   // ── Users ─────────────────────────────────────────────────────────────────────

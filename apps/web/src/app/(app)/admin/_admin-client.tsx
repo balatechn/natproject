@@ -42,12 +42,10 @@ function StatStrip() {
     { label: 'Users',     value: stats?.users,     icon: Users },
     { label: 'Projects',  value: stats?.projects,  icon: Briefcase },
     { label: 'Tasks',     value: stats?.tasks,     icon: BarChart2 },
-    { label: 'Leads',     value: stats?.leads,     icon: BarChart2 },
-    { label: 'Customers', value: stats?.customers, icon: Building },
     { label: 'Workflows', value: stats?.workflows, icon: Settings2 },
   ];
   return (
-    <div className="grid gap-3 grid-cols-3 lg:grid-cols-6">
+    <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
       {items.map(({ label, value, icon: Icon }) => (
         <Card key={label}>
           <CardContent className="flex flex-col items-center justify-center py-4 gap-1">

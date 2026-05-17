@@ -46,7 +46,6 @@ const TRIGGER_OPTIONS = [
   { value: 'task_created', label: 'Task Created' },
   { value: 'task_updated', label: 'Task Status Changed' },
   { value: 'project_created', label: 'Project Created' },
-  { value: 'crm_lead_created', label: 'CRM Lead Created' },
 ];
 
 const ACTION_OPTIONS = [
@@ -54,7 +53,6 @@ const ACTION_OPTIONS = [
   { value: 'update_task', label: 'Update Task Status' },
   { value: 'assign_task', label: 'Assign Task' },
   { value: 'create_notification', label: 'Create Notification' },
-  { value: 'update_crm_lead', label: 'Update CRM Lead Status' },
   { value: 'webhook_call', label: 'Call n8n Webhook' },
 ];
 
