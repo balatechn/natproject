@@ -382,6 +382,11 @@ model Task {
   activityLogs  ActivityLog[]
   recurringRule RecurringRule?
 
+  @@index([projectId])
+  @@index([status])
+  @@index([dueDate])
+  @@index([parentId])
+  @@index([projectId, status])
   @@map("tasks")
 }
 
@@ -667,6 +672,8 @@ model Notification {
 
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId, read])
+  @@index([userId, createdAt(sort: Desc)])
   @@map("notifications")
 }
 
@@ -737,6 +744,10 @@ model ActivityLog {
   project    Project? @relation(fields: [projectId], references: [id])
   task       Task?    @relation(fields: [taskId], references: [id])
 
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([taskId])
+  @@index([projectId])
   @@map("activity_logs")
 }
 

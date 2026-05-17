@@ -10,13 +10,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useTasks, useTask, useCreateTask } from '@/hooks/use-tasks';
+import { useTasks, useCreateTask } from '@/hooks/use-tasks';
 import { useProjects } from '@/hooks/use-projects';
 import { useToast } from '@/hooks/use-toast';
+import { TaskDrawer } from '@/components/common/task-drawer';
 import { format } from 'date-fns';
 
 const COLUMNS = [
@@ -73,77 +73,13 @@ function TaskCard({ task, onClick }: { task: any; onClick: () => void }) {
   );
 }
 
-function TaskDetailSheet({ taskId, onClose }: { taskId: string; onClose: () => void }) {
-  const { data: task, isLoading } = useTask(taskId);
-
-  return (
-    <Sheet open onOpenChange={(v) => !v && onClose()}>
-      <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>{isLoading ? <Skeleton className="h-5 w-48" /> : task?.title}</SheetTitle>
-        </SheetHeader>
-        {isLoading ? (
-          <div className="space-y-4 mt-4">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-20 w-full" />
-          </div>
-        ) : task && (
-          <div className="space-y-4 mt-4">
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div>
-                <p className="text-xs text-muted-foreground">Status</p>
-                <Badge variant="info" className="text-[10px] mt-0.5">{task.status.replace('_', ' ')}</Badge>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Priority</p>
-                <Badge variant={(PRIORITY_COLOR[task.priority] as any) ?? 'outline'} className="text-[10px] mt-0.5">{task.priority}</Badge>
-              </div>
-              {task.dueDate && (
-                <div>
-                  <p className="text-xs text-muted-foreground">Due Date</p>
-                  <p className="font-medium">{format(new Date(task.dueDate), 'PPP')}</p>
-                </div>
-              )}
-              {task.estimatedHours && (
-                <div>
-                  <p className="text-xs text-muted-foreground">Est. Hours</p>
-                  <p className="font-medium">{task.estimatedHours}h</p>
-                </div>
-              )}
-            </div>
-            {task.description && (
-              <div>
-                <p className="text-xs text-muted-foreground mb-1">Description</p>
-                <p className="text-sm leading-relaxed whitespace-pre-wrap">{task.description}</p>
-              </div>
-            )}
-            {task.comments?.length > 0 && (
-              <div>
-                <p className="text-xs text-muted-foreground mb-2">Comments ({task.comments.length})</p>
-                <div className="space-y-2">
-                  {task.comments.map((c: any) => (
-                    <div key={c.id} className="rounded-lg bg-muted p-3 text-sm">
-                      <p className="font-medium text-xs mb-1">{c.user?.name}</p>
-                      <p className="text-sm">{c.content}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </SheetContent>
-    </Sheet>
-  );
-}
-
 export default function TasksPage() {
   const { toast } = useToast();
   const [projectId, setProjectId] = useState('');
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<string | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [selectedTaskTitle, setSelectedTaskTitle] = useState<string | undefined>();
 
   const { data: projects } = useProjects({ limit: 50 });
   const { data: tasksData, isLoading } = useTasks({
@@ -270,7 +206,14 @@ export default function TasksPage() {
                 {isLoading ? (
                   Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-20 w-full rounded-lg" />)
                 ) : colTasks.map((task) => (
-                  <TaskCard key={task.id} task={task} onClick={() => setSelectedTask(task.id)} />
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    onClick={() => {
+                      setSelectedTaskId(task.id);
+                      setSelectedTaskTitle(task.title);
+                    }}
+                  />
                 ))}
               </div>
             </div>
@@ -278,9 +221,12 @@ export default function TasksPage() {
         })}
       </div>
 
-      {selectedTask && (
-        <TaskDetailSheet taskId={selectedTask} onClose={() => setSelectedTask(null)} />
-      )}
+      <TaskDrawer
+        taskId={selectedTaskId}
+        taskTitle={selectedTaskTitle}
+        open={!!selectedTaskId}
+        onOpenChange={(v) => { if (!v) setSelectedTaskId(null); }}
+      />
     </div>
   );
 }

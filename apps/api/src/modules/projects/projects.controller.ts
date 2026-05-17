@@ -13,6 +13,7 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 
 import { ProjectsService } from './projects.service';
+import { ActivityLogService } from '../tasks/activity-log.service';
 import { CreateProjectDto, UpdateProjectDto, CreateMilestoneDto } from './dto/project.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -21,7 +22,10 @@ import { Roles } from '../../common/decorators/roles.decorator';
 @ApiBearerAuth()
 @Controller('projects')
 export class ProjectsController {
-  constructor(private projectsService: ProjectsService) {}
+  constructor(
+    private projectsService: ProjectsService,
+    private activityLogService: ActivityLogService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'List all projects' })
@@ -122,5 +126,12 @@ export class ProjectsController {
     @Body() body: { name: string },
   ) {
     return this.projectsService.createBaseline(id, orgId, body.name);
+  }
+
+  // ---- Activity Log ----
+  @Get(':id/activity')
+  @ApiOperation({ summary: 'Get activity log for a project' })
+  getActivity(@Param('id') projectId: string) {
+    return this.activityLogService.findByProject(projectId);
   }
 }

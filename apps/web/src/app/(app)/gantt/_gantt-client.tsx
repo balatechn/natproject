@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { addDays, addMonths, subMonths, format, startOfDay, parseISO } from 'date-fns';
 import {
   ChevronLeft, ChevronRight, ZoomIn, ZoomOut, CalendarDays, FolderKanban, Info,
@@ -12,9 +13,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useProjects } from '@/hooks/use-projects';
 import { useTasks, useUpdateTaskDynamic } from '@/hooks/use-tasks';
-import { GanttChart } from '@/components/gantt/gantt-chart';
 import { GanttTask, ZoomLevel, getDefaultViewRange, PRIORITY_COLOR, STATUS_COLOR } from '@/components/gantt/gantt-utils';
 import { useToast } from '@/hooks/use-toast';
+
+// Dynamically import the heavy canvas-based Gantt chart to keep the initial JS bundle smaller
+const GanttChart = dynamic(
+  () => import('@/components/gantt/gantt-chart').then((m) => ({ default: m.GanttChart })),
+  { loading: () => <Skeleton className="h-full w-full rounded-md" />, ssr: false },
+);
 
 function toGanttTask(t: any): GanttTask {
   return {

@@ -1,10 +1,14 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { EventsGateway } from '../events/events.gateway';
 import type { CreateProjectDto, UpdateProjectDto, CreateMilestoneDto } from './dto/project.dto';
 
 @Injectable()
 export class ProjectsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Optional() private readonly events?: EventsGateway,
+  ) {}
 
   async findAll(
     organizationId: string,
@@ -73,7 +77,7 @@ export class ProjectsService {
 
   async update(id: string, organizationId: string, dto: UpdateProjectDto) {
     await this.assertExists(id, organizationId);
-    return this.prisma.project.update({
+    const project = await this.prisma.project.update({
       where: { id },
       data: {
         ...dto,
@@ -82,6 +86,8 @@ export class ProjectsService {
       },
       include: { team: true },
     });
+    this.events?.emitProjectUpdated(organizationId, project);
+    return project;
   }
 
   async delete(id: string, organizationId: string) {

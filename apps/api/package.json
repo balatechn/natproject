@@ -22,6 +22,8 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
+    "@natproject/types": "workspace:*",
+    "@nestjs/cache-manager": "^3.1.2",
     "@nestjs/common": "^10.3.10",
     "@nestjs/config": "^3.2.3",
     "@nestjs/core": "^10.3.10",
@@ -33,8 +35,8 @@
     "@nestjs/swagger": "^7.4.0",
     "@nestjs/throttler": "^6.1.0",
     "@nestjs/websockets": "^10.3.10",
-    "@natproject/types": "workspace:*",
     "@prisma/client": "^5.16.1",
+    "@socket.io/redis-adapter": "^8.3.0",
     "argon2": "^0.40.3",
     "cache-manager": "^5.7.6",
     "cache-manager-ioredis-yet": "^2.1.1",
@@ -43,6 +45,7 @@
     "cookie-parser": "^1.4.6",
     "helmet": "^7.1.0",
     "ioredis": "^5.4.1",
+    "minio": "^8.0.7",
     "nodemailer": "^6.9.14",
     "otplib": "^12.0.1",
     "passport": "^0.7.0",
@@ -61,6 +64,7 @@
     "@nestjs/testing": "^10.3.10",
     "@types/cookie-parser": "^1.4.7",
     "@types/jest": "^29.5.12",
+    "@types/multer": "^2.1.0",
     "@types/node": "^20.14.10",
     "@types/nodemailer": "^6.4.15",
     "@types/passport-google-oauth20": "^2.0.16",
@@ -81,10 +85,16 @@
     "typescript": "^5.5.2"
   },
   "jest": {
-    "moduleFileExtensions": ["js", "json", "ts"],
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
-    "transform": { "^.+\\.(t|j)s$": "ts-jest" },
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    },
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
   }

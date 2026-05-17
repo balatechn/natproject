@@ -13,6 +13,7 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 
 import { TasksService } from './tasks.service';
+import { ActivityLogService } from './activity-log.service';
 import {
   CreateTaskDto,
   UpdateTaskDto,
@@ -26,7 +27,10 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 @ApiBearerAuth()
 @Controller('tasks')
 export class TasksController {
-  constructor(private tasksService: TasksService) {}
+  constructor(
+    private tasksService: TasksService,
+    private activityLogService: ActivityLogService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'List tasks (with filters)' })
@@ -138,5 +142,12 @@ export class TasksController {
     @CurrentUser('id') userId: string,
   ) {
     return this.tasksService.deleteComment(commentId, userId);
+  }
+
+  // ---- Activity Log ----
+  @Get(':id/activity')
+  @ApiOperation({ summary: 'Get activity log for a task' })
+  getActivity(@Param('id') taskId: string) {
+    return this.activityLogService.findByTask(taskId);
   }
 }

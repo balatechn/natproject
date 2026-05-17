@@ -14,7 +14,8 @@ export function useNotifications(params?: { unreadOnly?: boolean; page?: number 
       const res = await apiClient.get('/notifications', { params });
       return res.data.data;
     },
-    refetchInterval: 30_000,
+    // Socket events invalidate the cache instantly; poll every 5 min as fallback
+    refetchInterval: 5 * 60_000,
   });
 }
 
@@ -25,7 +26,8 @@ export function useUnreadCount() {
       const res = await apiClient.get('/notifications/unread-count');
       return res.data.data as number;
     },
-    refetchInterval: 30_000,
+    // Socket events drive live updates; poll every 5 min as fallback
+    refetchInterval: 5 * 60_000,
   });
 }
 

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { CacheModule } from '@nestjs/cache-manager';
 import { APP_GUARD, APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 
 import { PrismaModule } from './common/prisma/prisma.module';
@@ -21,6 +22,8 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { AdminModule } from './modules/admin/admin.module';
 import { HealthModule } from './modules/health/health.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { EventsModule } from './modules/events/events.module';
+import { AttachmentsModule } from './modules/attachments/attachments.module';
 
 @Module({
   imports: [
@@ -34,6 +37,22 @@ import { ReportsModule } from './modules/reports/reports.module';
         },
       ],
     }),
+    CacheModule.registerAsync({
+      isGlobal: true,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        store: 'memory',            // falls back to in-memory when Redis is unavailable
+        ttl: 300,                   // 5 minutes default TTL
+        max: 500,
+        ...(config.get<string>('REDIS_URL')
+          ? {
+              // Redis store loaded dynamically to avoid hard dep at startup
+              store: require('cache-manager-ioredis-yet').default,
+              url: config.get<string>('REDIS_URL'),
+            }
+          : {}),
+      }),
+    }),
     PrismaModule,
     AuthModule,
     UsersModule,
@@ -46,8 +65,11 @@ import { ReportsModule } from './modules/reports/reports.module';
     AdminModule,
     HealthModule,
     ReportsModule,
+    EventsModule,
+    AttachmentsModule,
   ],
   providers: [
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },

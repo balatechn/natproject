@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { EventsGateway } from '../events/events.gateway';
 import type {
   CreateTaskDto,
   UpdateTaskDto,
@@ -17,7 +18,10 @@ const TASK_INCLUDE = {
 
 @Injectable()
 export class TasksService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Optional() private readonly events?: EventsGateway,
+  ) {}
 
   async findAll(
     organizationId: string,
@@ -93,6 +97,10 @@ export class TasksService {
       }
     }
 
+    // Broadcast
+    const orgId = await this.getOrgId(task.projectId);
+    this.events?.emitTaskCreated(orgId, task);
+
     return task;
   }
 
@@ -116,12 +124,18 @@ export class TasksService {
       },
       include: TASK_INCLUDE,
     });
+
+    const orgId = await this.getOrgId(task.projectId);
+    this.events?.emitTaskUpdated(orgId, task);
+
     return task;
   }
 
   async delete(id: string) {
-    await this.assertExists(id);
+    const task = await this.assertExists(id);
     await this.prisma.task.delete({ where: { id } });
+    const orgId = await this.getOrgId(task.projectId);
+    this.events?.emitTaskDeleted(orgId, id);
     return { message: 'Task deleted' };
   }
 
@@ -173,11 +187,14 @@ export class TasksService {
   }
 
   async addComment(taskId: string, authorId: string, dto: CreateCommentDto) {
-    await this.assertExists(taskId);
-    return this.prisma.comment.create({
+    const task = await this.assertExists(taskId);
+    const comment = await this.prisma.comment.create({
       data: { taskId, authorId, body: dto.body },
       include: { author: { select: { id: true, name: true, avatarUrl: true } } },
     });
+    const orgId = await this.getOrgId(task.projectId);
+    this.events?.emitCommentCreated(orgId, { ...comment, taskId });
+    return comment;
   }
 
   async deleteComment(commentId: string, authorId: string) {
@@ -227,5 +244,13 @@ export class TasksService {
     const task = await this.prisma.task.findUnique({ where: { id } });
     if (!task) throw new NotFoundException('Task not found');
     return task;
+  }
+
+  private async getOrgId(projectId: string): Promise<string> {
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      select: { organizationId: true },
+    });
+    return project?.organizationId ?? '';
   }
 }
