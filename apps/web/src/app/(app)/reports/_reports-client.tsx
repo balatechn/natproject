@@ -19,7 +19,6 @@ import {
   useTaskSlaReport,
   useTeamWorkloadReport,
   useResourceUtilizationReport,
-  useCrmPipelineReport,
 } from '@/hooks/use-reports';
 
 // ── Colour palette ────────────────────────────────────────────────────────────
@@ -42,8 +41,6 @@ const PRIORITY_COLORS: Record<string, string> = {
   MEDIUM:   '#f59e0b',
   LOW:      '#3b82f6',
 };
-
-const FUNNEL_COLORS = ['#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#10b981', '#ef4444'];
 
 // ── Small helpers ──────────────────────────────────────────────────────────────
 
@@ -341,71 +338,6 @@ function TeamTab() {
   );
 }
 
-function CrmTab() {
-  const { data: crm, isLoading } = useCrmPipelineReport();
-
-  const funnelData = (crm?.leadFunnel ?? []).filter((s) => s.count > 0);
-  const maxCount = Math.max(...funnelData.map((s) => s.count), 1);
-
-  return (
-    <div className="space-y-5">
-      {/* Lead funnel */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold">Lead Funnel</CardTitle>
-          <CardDescription className="text-xs">Leads by stage with total pipeline value</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? <Skeleton className="h-48 w-full" /> : funnelData.length === 0 ? (
-            <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">No leads yet</div>
-          ) : (
-            <div className="space-y-2 py-2">
-              {funnelData.map((row, i) => (
-                <div key={row.stage} className="space-y-1">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-medium w-28">{row.stage}</span>
-                    <span className="text-muted-foreground">{row.count} leads{row.totalValue > 0 ? ` · $${row.totalValue.toLocaleString()}` : ''}</span>
-                  </div>
-                  <div className="h-6 rounded-lg overflow-hidden bg-muted/40">
-                    <div
-                      className="h-full rounded-lg transition-all"
-                      style={{
-                        width: `${Math.max((row.count / maxCount) * 100, 4)}%`,
-                        backgroundColor: FUNNEL_COLORS[i % FUNNEL_COLORS.length],
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Opportunity pipeline */}
-      {(crm?.pipeline ?? []).length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold">Opportunity Pipeline</CardTitle>
-            <CardDescription className="text-xs">Opportunities by stage value</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={crm?.pipeline ?? []} barSize={32}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} width={48} tickFormatter={(v) => `$${(v/1000).toFixed(0)}k`} />
-                <Tooltip formatter={(v: any) => [`$${Number(v).toLocaleString()}`, 'Value']} />
-                <Bar dataKey="totalValue" name="Value ($)" radius={[4,4,0,0]} fill="#16a34a" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
-
 // ── Main page ──────────────────────────────────────────────────────────────────
 
 export default function ReportsClient() {
@@ -415,7 +347,7 @@ export default function ReportsClient() {
         <BarChart2 className="h-6 w-6 text-primary shrink-0" />
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Reports & Analytics</h1>
-          <p className="text-sm text-muted-foreground">Live insights across projects, tasks, team, and CRM</p>
+          <p className="text-sm text-muted-foreground">Live insights across projects, tasks, and team</p>
         </div>
       </div>
 
@@ -424,12 +356,10 @@ export default function ReportsClient() {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="projects">Projects</TabsTrigger>
           <TabsTrigger value="team">Team</TabsTrigger>
-          <TabsTrigger value="crm">CRM</TabsTrigger>
         </TabsList>
         <TabsContent value="overview" className="mt-5"><OverviewTab /></TabsContent>
         <TabsContent value="projects" className="mt-5"><ProjectsTab /></TabsContent>
         <TabsContent value="team"     className="mt-5"><TeamTab /></TabsContent>
-        <TabsContent value="crm"      className="mt-5"><CrmTab /></TabsContent>
       </Tabs>
     </div>
   );

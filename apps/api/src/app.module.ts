@@ -17,7 +17,6 @@ import { ProjectsModule } from './modules/projects/projects.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { ResourcesModule } from './modules/resources/resources.module';
 import { WorkflowsModule } from './modules/workflows/workflows.module';
-import { CrmModule } from './modules/crm/crm.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { HealthModule } from './modules/health/health.module';
@@ -61,7 +60,6 @@ import { TimeEntriesModule } from './modules/time-entries/time-entries.module';
     TasksModule,
     ResourcesModule,
     WorkflowsModule,
-    CrmModule,
     NotificationsModule,
     AdminModule,
     HealthModule,

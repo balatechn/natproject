@@ -10,7 +10,6 @@ const reportsKeys = {
   taskSla:       () => [...reportsKeys.all, 'task-sla'] as const,
   teamWorkload:  () => [...reportsKeys.all, 'team-workload'] as const,
   resources:     () => [...reportsKeys.all, 'resource-utilization'] as const,
-  crmPipeline:   () => [...reportsKeys.all, 'crm-pipeline'] as const,
 };
 
 export function useProjectStatusReport() {
@@ -78,15 +77,3 @@ export function useResourceUtilizationReport() {
   });
 }
 
-export function useCrmPipelineReport() {
-  return useQuery({
-    queryKey: reportsKeys.crmPipeline(),
-    queryFn: async () => {
-      const { data } = await axios.get('/reports/crm-pipeline');
-      return data as {
-        leadFunnel: Array<{ stage: string; count: number; totalValue: number }>;
-        pipeline: Array<{ id: string; name: string; count: number; totalValue: number }>;
-      };
-    },
-  });
-}

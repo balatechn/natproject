@@ -51,7 +51,6 @@ enum WorkflowTrigger {
   SLA_BREACH
   PROJECT_CREATED
   PROJECT_COMPLETED
-  LEAD_CREATED
   MANUAL
   SCHEDULED
   WEBHOOK
@@ -62,19 +61,7 @@ enum NotificationType {
   TASK
   PROJECT
   WORKFLOW
-  CRM
-  WHATSAPP
   EMAIL
-}
-
-enum LeadStatus {
-  NEW
-  CONTACTED
-  QUALIFIED
-  PROPOSAL
-  NEGOTIATION
-  WON
-  LOST
 }
 
 // ============================================================
@@ -97,8 +84,6 @@ model Organization {
   projects    Project[]
   workflows   Workflow[]
   settings    Setting[]
-  leads       Lead[]
-  customers   Customer[]
 
   @@map("organizations")
 }
@@ -174,7 +159,6 @@ model User {
   leaves           Leave[]
   comments         Comment[]
   approvals        Approval[]
-  assignedLeads    Lead[]           @relation("LeadAssignee")
   resources        Resource[]
   timeEntries      TimeEntry[]
 
@@ -555,110 +539,6 @@ model Approval {
 }
 
 // ============================================================
-// CRM
-// ============================================================
-
-model PipelineStage {
-  id           String        @id @default(cuid())
-  name         String
-  position     Int
-  probability  Float         @default(0)
-  color        String        @default("#3b82f6")
-  createdAt    DateTime      @default(now())
-
-  opportunities Opportunity[]
-
-  @@map("pipeline_stages")
-}
-
-model Customer {
-  id             String        @id @default(cuid())
-  organizationId String
-  name           String
-  email          String?
-  phone          String?
-  company        String?
-  industry       String?
-  website        String?
-  address        String?
-  notes          String?
-  tags           String[]
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-
-  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  leads          Lead[]
-  opportunities  Opportunity[]
-  interactions   Interaction[]
-
-  @@map("customers")
-}
-
-model Lead {
-  id             String     @id @default(cuid())
-  organizationId String
-  customerId     String?
-  assignedToId   String?
-  name           String
-  email          String?
-  phone          String?
-  company        String?
-  source         String?
-  value          Float?
-  status         LeadStatus @default(NEW)
-  priority       String     @default("NONE")
-  notes          String?
-  tags           String[]
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
-
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  customer       Customer?    @relation(fields: [customerId], references: [id])
-  assignedTo     User?        @relation("LeadAssignee", fields: [assignedToId], references: [id])
-  interactions   Interaction[]
-
-  @@map("leads")
-}
-
-model Opportunity {
-  id             String        @id @default(cuid())
-  customerId     String
-  stageId        String
-  title          String
-  value          Float?
-  expectedCloseDate DateTime?
-  ownerId        String?
-  notes          String?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-
-  customer       Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  stage          PipelineStage @relation(fields: [stageId], references: [id])
-  interactions   Interaction[]
-
-  @@map("opportunities")
-}
-
-model Interaction {
-  id            String       @id @default(cuid())
-  customerId    String?
-  leadId        String?
-  opportunityId String?
-  type          String
-  subject       String
-  notes         String?
-  scheduledAt   DateTime?
-  completedAt   DateTime?
-  createdAt     DateTime     @default(now())
-
-  customer      Customer?    @relation(fields: [customerId], references: [id])
-  lead          Lead?        @relation(fields: [leadId], references: [id])
-  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id])
-
-  @@map("interactions")
-}
-
-// ============================================================
 // COMMUNICATIONS
 // ============================================================
 
@@ -678,22 +558,6 @@ model Notification {
   @@index([userId, read])
   @@index([userId, createdAt(sort: Desc)])
   @@map("notifications")
-}
-
-model WhatsAppLog {
-  id          String   @id @default(cuid())
-  direction   String
-  phone       String
-  message     String
-  templateId  String?
-  status      String   @default("PENDING")
-  externalId  String?
-  entityType  String?
-  entityId    String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@map("whatsapp_logs")
 }
 
 // ============================================================

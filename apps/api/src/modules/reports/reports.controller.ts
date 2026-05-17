@@ -21,12 +21,6 @@ export class ReportsController {
     return this.reportsService.getResourceUtilizationReport(orgId);
   }
 
-  @Get('crm-pipeline')
-  @ApiOperation({ summary: 'CRM pipeline funnel report' })
-  getCrmPipeline(@CurrentUser('organizationId') orgId: string) {
-    return this.reportsService.getCrmPipelineReport(orgId);
-  }
-
   @Get('task-sla')
   @ApiOperation({ summary: 'Task SLA compliance report' })
   getTaskSla(@CurrentUser('organizationId') orgId: string) {

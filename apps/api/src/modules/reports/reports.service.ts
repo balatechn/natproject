@@ -123,37 +123,6 @@ export class ReportsService {
     });
   }
 
-  async getCrmPipelineReport(organizationId: string) {
-    // Lead funnel by status
-    const leadsByStatus = await this.prisma.lead.groupBy({
-      by: ['status'],
-      where: { organizationId },
-      _count: true,
-      _sum: { value: true },
-    });
-
-    const stageOrder = ['NEW', 'CONTACTED', 'QUALIFIED', 'PROPOSAL', 'WON', 'LOST'];
-    const result = stageOrder.map((s) => {
-      const row = leadsByStatus.find((r) => r.status === s);
-      return { stage: s, count: row?._count ?? 0, totalValue: row?._sum?.value ?? 0 };
-    });
-
-    // Pipeline stages from opportunities
-    const stages = await this.prisma.pipelineStage.findMany({
-      orderBy: { position: 'asc' },
-      include: { opportunities: { select: { value: true } } },
-    });
-
-    const pipeline = stages.map((stage) => ({
-      id: stage.id,
-      name: stage.name,
-      count: stage.opportunities.length,
-      totalValue: stage.opportunities.reduce((s, o) => s + (o.value ?? 0), 0),
-    }));
-
-    return { leadFunnel: result, pipeline };
-  }
-
   async getTaskSlaReport(organizationId: string) {
     const [total, breached, atRisk] = await this.prisma.$transaction([
       this.prisma.task.count({ where: { project: { organizationId } } }),
