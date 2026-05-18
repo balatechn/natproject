@@ -56,7 +56,6 @@ async function bootstrap() {
       .addTag('tasks', 'Task Management')
       .addTag('resources', 'Resource Management')
       .addTag('workflows', 'Workflow Engine')
-      .addTag('crm', 'CRM')
       .addTag('notifications', 'Notifications')
       .addTag('reports', 'Reports & Analytics')
       .addTag('admin', 'Admin Panel')
