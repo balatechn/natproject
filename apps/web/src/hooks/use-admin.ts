@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from '@/lib/axios';
+import { apiClient } from '@/lib/api-client';
 
 const adminKeys = {
   all:        ['admin'] as const,
@@ -18,7 +18,7 @@ export function useAdminStats() {
   return useQuery({
     queryKey: adminKeys.stats(),
     queryFn: async () => {
-      const { data } = await axios.get('/admin/stats');
+      const { data } = await apiClient.get('/admin/stats');
       return data as { users: number; projects: number; tasks: number; workflows: number };
     },
   });
@@ -28,7 +28,7 @@ export function useAdminUsers(params?: { search?: string; page?: number; pageSiz
   return useQuery({
     queryKey: adminKeys.users(params),
     queryFn: async () => {
-      const { data } = await axios.get('/admin/users', { params });
+      const { data } = await apiClient.get('/admin/users', { params });
       return data as {
         data: Array<{
           id: string; name: string; email: string; status: string; jobTitle: string | null;
@@ -45,7 +45,7 @@ export function useUpdateUser() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, ...dto }: { id: string; status?: string; jobTitle?: string }) =>
-      axios.patch(`/admin/users/${id}`, dto).then((r) => r.data),
+      apiClient.patch(`/admin/users/${id}`, dto).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: adminKeys.all }),
   });
 }
@@ -54,7 +54,7 @@ export function useAdminRoles() {
   return useQuery({
     queryKey: adminKeys.roles(),
     queryFn: async () => {
-      const { data } = await axios.get('/admin/roles');
+      const { data } = await apiClient.get('/admin/roles');
       return data as Array<{
         id: string; name: string; description: string | null; isSystem: boolean;
         permissions: Array<{ permission: { id: string; resource: string; action: string; description: string | null } }>;
@@ -67,7 +67,7 @@ export function useAdminPermissions() {
   return useQuery({
     queryKey: adminKeys.permissions(),
     queryFn: async () => {
-      const { data } = await axios.get('/admin/permissions');
+      const { data } = await apiClient.get('/admin/permissions');
       return data as Array<{ id: string; resource: string; action: string; description: string | null }>;
     },
   });
@@ -77,7 +77,7 @@ export function useApiKeys() {
   return useQuery({
     queryKey: adminKeys.apiKeys(),
     queryFn: async () => {
-      const { data } = await axios.get('/admin/api-keys');
+      const { data } = await apiClient.get('/admin/api-keys');
       return data as Array<{
         id: string; name: string; prefix: string; scopes: string[];
         expiresAt: string | null; lastUsedAt: string | null; createdAt: string;
@@ -90,7 +90,7 @@ export function useCreateApiKey() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (dto: { name: string; scopes?: string[]; expiresAt?: string }) =>
-      axios.post('/admin/api-keys', dto).then((r) => r.data),
+      apiClient.post('/admin/api-keys', dto).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: adminKeys.apiKeys() }),
   });
 }
@@ -98,7 +98,7 @@ export function useCreateApiKey() {
 export function useRevokeApiKey() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => axios.delete(`/admin/api-keys/${id}`).then((r) => r.data),
+    mutationFn: (id: string) => apiClient.delete(`/admin/api-keys/${id}`).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: adminKeys.apiKeys() }),
   });
 }
@@ -107,7 +107,7 @@ export function useAuditLog(params?: { userId?: string; resource?: string; page?
   return useQuery({
     queryKey: adminKeys.auditLog(params),
     queryFn: async () => {
-      const { data } = await axios.get('/admin/audit-log', { params });
+      const { data } = await apiClient.get('/admin/audit-log', { params });
       return data as {
         data: Array<{
           id: string; userId: string | null; action: string; resource: string;
@@ -124,7 +124,7 @@ export function useAdminSettings() {
   return useQuery({
     queryKey: adminKeys.settings(),
     queryFn: async () => {
-      const { data } = await axios.get('/admin/settings');
+      const { data } = await apiClient.get('/admin/settings');
       return data as {
         settings: Array<{ id: string; key: string; value: unknown; updatedAt: string }>;
         organization: { id: string; name: string; slug: string; logoUrl: string | null; website: string | null; industry: string | null };
@@ -137,7 +137,7 @@ export function useUpdateOrganization() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (dto: Partial<{ name: string; logoUrl: string; website: string; industry: string }>) =>
-      axios.patch('/admin/organization', dto).then((r) => r.data),
+      apiClient.patch('/admin/organization', dto).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: adminKeys.settings() }),
   });
 }
@@ -145,7 +145,9 @@ export function useUpdateOrganization() {
 export function useUpsertSetting() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (dto: { key: string; value: unknown }) => axios.patch('/admin/settings', dto).then((r) => r.data),
+    mutationFn: (dto: { key: string; value: unknown }) => apiClient.patch('/admin/settings', dto).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: adminKeys.settings() }),
   });
 }
+
+
